@@ -6,8 +6,6 @@ using namespace std;
 
 Vigenere::Vigenere() {
     init();
-    setkey();
-    setplaintext();
 }
 
 void Vigenere::init() {
@@ -26,12 +24,18 @@ void Vigenere::setkey() {
 
 void Vigenere::setplaintext() {
     ifstream fin;
+    char ch;
+    int i;
+    char pch[1024] = {0};
     fin.open("file.in");
     if (fin.fail()) {
         cout << "File open error!" << endl;
         exit(1);
     }
-    fin << string;
+    while (fin.get(ch) && i < 1024) {
+        pch[i++] = ch;
+    }
+    plaintext = (string)pch;
     fin.close();
 }
 
@@ -47,13 +51,13 @@ void Vigenere::encryption() {
 }
 
 void Vigenere::decryption() {
-    plaintext = ciphertext;
+    plaintext2 = ciphertext;
     unsigned int i;
     int m, n;
     for (i = 0; i < ciphertext.length(); i++) {
         n = int(key[i % (key.length())] - 'a');
         m = getposition(i, n);
-        plaintext[i] = char('a' + m);
+        plaintext2[i] = char('a' + m);
     }
 }
 
@@ -68,3 +72,8 @@ int Vigenere::getposition(int p, int n) {
     return position;
 }
 
+void Vigenere::output() {
+    cout << "plaintext:" << plaintext << endl;
+    cout << "ciphertext:" << ciphertext << endl;
+    cout << "plaintext2:" << plaintext2 << endl;
+}

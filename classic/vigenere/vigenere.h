@@ -9,7 +9,7 @@ private:
     string key;
     string plaintext;
     string ciphertext;
-    string decodedtext;
+    string plaintext2;
 public:
     Vigenere();
     void init();

@@ -91,8 +91,8 @@ void Hill::decryption() {
     int plaitext[2] = {0, 0};
     int i, j, k;
     for (i = 0; i < ciphertext.size(); i += 2) {
-        ciphtext[i % 2] = int(ciphtext[i] - 'a');
-        ciphtext[(i + 1) % 2] = int(ciphtext[i + 1] - 'a');
+        ciphtext[i % 2] = int(ciphertext[i] - 'a');
+        ciphtext[(i + 1) % 2] = int(ciphertext[i + 1] - 'a');
  
         for (j = 0; j < 2; j++) {
             for (k = 0; k < 2; k++) {

@@ -132,3 +132,194 @@ void AES::keyExpansion(byte key[], word w[]) {
         }
     }
 }
+
+word AES::rotWord(word w) {
+    int i;
+    word temp;
+    for (i = 0; i < 4; i++) {
+        temp.wordKey[(i + 3) % 4] = w.wordKey[i];
+    }
+    return temp;
+}
+
+word AES::subWord(word w) {
+    int i;
+    byte L, R;
+    for (i = 0; i < 4; i++) {
+        L = w.wordKey[i] >> 4;
+        R = w.wordKey[i] & 0x0F;
+        w.wordKey[i] = SBox[L][R];
+    }
+    return w;
+}
+
+word AES::wordXOR(word w1, word w2) {
+    int i;
+    word temp;
+    for (i = 0; i < 4; i++) {
+        temp.wordKey[i] = w1.wordKey[i] ^ w2.wordKey[i];
+    }
+    return temp;
+}
+
+void AES::encryption(word in[], word out[], word key[]) {
+    int i, j, k;
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            out[i].wordKey[j] = in[i].wordKey[j];
+        }
+    }
+    addRoundKey(out, 0);
+    for (i = 1; i < 10; 1++) {
+        subByte(out);
+        shiftRows(out);
+        mixColumn(out);
+        addRoundKey(out, i);
+    }
+    subByte(out);
+    shiftRows(out);
+    addRoundKey(out, 10);
+}
+
+
+void AES::subByte(word in[]) {
+    int i, j;
+    byte L, R;
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            L = in[i].wordKey[j] >> 4;
+            R = in[i].wordKey[j] & 0x0F;
+            in[i].wordKey[j] = SBox[L][R];
+        }
+    }
+}
+
+
+void AES::shiftRows(word in[]) {
+    int i, j;
+    word temp[4];
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            temp[i].wordKey[(j + (4 - i)) % 4] = in[i].wordKey[j];
+        }
+    }
+
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            in[i].wordKey[j] = temp[i].wordKey[j];
+        }
+    }
+}
+
+void AES::mixColumn(word in[]) {
+    word result[4];
+    int i, j, k;
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            result[i].wordKey[j] = GFMultiplyByte(mixColumnMatrix[i][0], in[0].wordKey[j]);
+            for (k = 1; k < 4; k++) {
+                result[i].wordKey[j] ^= GFMultiplyByte(mixColumnMatrix[i][k],in[k].wordKey[j]);
+            }
+        }
+    }
+
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            in[i].wordKey[j] = result[i].wordKey[j];
+        }
+    }
+}
+
+byte AES::GFMultiplyByte(byte L, byte R) {
+    byte temp[8];
+    byte result = 0x00;
+    temp[0] = L;
+    int i;
+    for (i = 1; i < 8; i++) {
+        if (temp[i - 1] >= 0x80) {
+            temp[i] = (temp[i - 1] << 1) ^ 0x1b;
+        } else {
+            temp[i] = temp[i - 1] << 1;
+        }
+    }
+
+    for (i = 0; i < 8; i++) {
+        if (int((R >> i) & 0x01) == 1) {
+            result ^= temp[i];
+        }   
+    }
+    return result;
+}
+
+void AES::addRoundKey(word in[], int round) {
+    int i, j;
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            in[i].wordKey[j] ^= wordKey[i + 4 * round].wordKey[j];
+        }
+    }
+}
+
+void AES::decryption(word in[], word out[], word key[]) {
+    int i, j, k;
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            out[i].wordKey[j] = in[i].wordKey[j];
+        }
+    }
+
+    addRoundKey(out, 10);
+    for (i = 9; i > 0; i--) {
+        invShiftRows(out);
+        invSubByte(out);
+        addRoundKey(out, i);
+        invMixColumn(out);
+    }
+    invShiftRows(out);
+    invSubByte(out);
+    addRoundKey(out, 0);
+}
+
+void AES::invShiftRows(word in[]) {
+    int i, j;
+    word temp[4];
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            temp[i].wordKey[(j + i) % 4] = in[i].wordKey[j];
+        }   
+    }
+
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            in[i].wordKey[j] = temp[i].wordKey[j];
+        }
+    }
+}
+
+void AES::invSubByte(word in[]) {
+    int i, j;
+    byte L, R;
+    for (i = 0; i < 4; i++) {
+        for ( j = 0; j < 4; j++) {
+            L = in[i].wordKey[j] >> 4;
+            R = in[i].wordKey[j] & 0x0F;
+            in[i].wordKey[j] = invSBox[L][R];
+        }
+    }
+}
+
+void AES::invMixColumn(word in[]) {
+    word result[4];
+    int i, j, k;
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            result[i].wordKey[j] = GFMultiplyByte(invMixColumnMatrix[i][0], in[0].wordKey[j]);
+            GFMultiplyByte(invMixColumnMatrix[i][k], in[k].wordKey[j]);
+        }
+    }
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            in[i].wordKey[j] = result[i].wordKey[j];
+        }
+    }
+}
